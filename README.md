@@ -12,13 +12,11 @@ It leverages the Playwright library for web automation and includes custom funct
 
 ```
 $ pip install -r requirements.txt 
-  playwright install chromium
 ```
 
 ### Start Local
 ```
 $ uvicorn main:app --host 0.0.0.0 --port 10000
-
 ```
 ## Environment Variables:
 
