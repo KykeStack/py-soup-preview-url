@@ -37,7 +37,7 @@ async def get_access(token: Annotated[str, Depends(reusable_oauth2)]) -> Functio
             
         if not validate_domain(payload.sub):
             return FunctionStatus(status=False, section=1, error='Invalid domain', functionName='get_access')
-          
+        
         return FunctionStatus(status=True, section=2, functionName='get_access')
     except Exception as error:
         return FunctionStatus(status=False, section=3, error=error, functionName='get_access')

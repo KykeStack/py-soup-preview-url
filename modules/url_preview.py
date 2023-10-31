@@ -1,6 +1,11 @@
 from typing import Optional
 from urllib.parse import urlparse, urljoin, urlunparse
 from pprint import pprint
+import asyncio
+
+from selenium import webdriver 
+from selenium.webdriver import Chrome 
+import time
 
 from bs4 import BeautifulSoup, Tag
 import re
@@ -8,6 +13,10 @@ import httpx
 
 BASE64_REGEX = r'^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))$'
 
+options = webdriver.ChromeOptions() 
+options.add_argument("--headless")
+options.page_load_strategy = "none"
+    
 domain_evaluations = {
     'link[rel=canonical]': 'href',
     'meta[property="og:url"]': 'content',
@@ -18,6 +27,7 @@ image_evaluations = {
     'meta[property="og:image"]': 'content',
     'meta[name="twitter:image"]': 'content',
     'link[rel="image_src"]': 'href',
+    'link[rel="apple-touch-icon"]': 'href',
     'img': 'src'
 }
 
@@ -109,17 +119,24 @@ async def get_domain(
     except: return None
 
 async def get_preview_image(
-    head: Tag, 
+    page: BeautifulSoup, 
     url: str
 ) -> Optional[str]:
     try: 
+        head = page.head
         image_source = await evaluate_sources(head, image_evaluations)
         if image_source:
             if not len(image_source) > 0: return
             if can_parse_url(image_source): return image_source
             join_url = urljoin(url, image_source)
             if await url_image_is_accessible(join_url): return join_url
-            print("Url is not accessible")
+            print("Url IMG IS not accessible")
+            
+        image_source = await get_favicon(head, url)
+        if image_source: return image_source
+        
+        image_source = page.select_one('img')
+        if image_source: return image_source.get('src')
         return None
     except: return None
 
@@ -137,7 +154,7 @@ async def get_favicon(
             if can_parse_url(favicon_url): return favicon_url
             join_url = urljoin(url, favicon_url)
             if await url_image_is_accessible(join_url): return join_url
-            print("Url is not accessible")
+            print("Url is Image not accessible")
         return None
     except: return None
     
@@ -147,36 +164,65 @@ async def get_description(
     try: 
         description_source = await evaluate_sources(page.head, description_evaluations)
         if not description_source:
-            print("No description source")
             p_tag = page.select_one('body p')
             if not p_tag: return None
             description_source = p_tag.contents[0]
-            
+
         if len(description_source) < 1: return None
-        
+        print("No description source")
         return description_source
     except: return None
 
 async def get_title(head: Tag):
     if head.title: return head.title.text
     return await evaluate_sources(head, title_evaluations)
-
-async def get_url_preview(url):
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url)
-        page = BeautifulSoup(response.content, 'html.parser')
-        head = page.head
-        current_url = url
-        page_title = await get_title(head)
-        domain = await get_domain(head, url)
-        image = await get_preview_image(head, url)
-        favicon = await get_favicon(head, url)
-        description = await get_description(page)
+    
+async def suop_html_parser(html: str, url: str):
+    page = BeautifulSoup(html, 'html.parser')
+    head = page.head
+    current_url = url
+    page_title = await get_title(head)
+    domain = await get_domain(head, url)
+    image = await get_preview_image(page, url)
+    description = await get_description(page)
+    
     return {
         "url": current_url, 
         "domain": domain,
         "title": page_title,
         "image": image,
-        "favicon": favicon,
         "description": description
     }
+
+async def simple_requester(url):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+    content = await suop_html_parser(response.content, url)
+    return content
+
+def interceptor(request):
+    # Block PNG, JPEG and GIF images
+    print(request.path())
+    if request.path.endswith(('.png', '.jpg', '.gif')):
+        request.abort()
+
+async def selenium_requester(url):
+    driver = Chrome(options=options) 
+    driver.get(url) 
+    # for request in driver.requests:
+    #     print(request)
+    #     if request.response:
+    #         pass
+    time.sleep(3)
+    content = await suop_html_parser(driver.page_source, url)
+    driver.quit()
+    return content
+
+async def get_url_preview(url):
+    data = await simple_requester(url)
+
+    if not data.get('image') or not data.get('title'):
+        print("Requesting url through Selenium")
+        data = await selenium_requester(url)
+
+    return data
