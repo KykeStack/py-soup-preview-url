@@ -4,9 +4,9 @@ The python version of URL preview on Node.js repo
 
 ## About
 
-🌐🔍 This Repo facilitates the creation of URL previews by scraping information from a specified web page. 
+🌐 This Repo facilitates the creation of URL previews by scraping information from a specified web page. 
 
-It leverages the Playwright library for web automation and includes custom functions from separate modules to extract a variety of details from the provided URL, such as the domain name, image preview URL, favicon, title, and description. 🚀
+It leverages the Playwright library for web automation and includes custom functions from separate modules to extract a variety of details from the provided URL, such as the domain name, image preview URL, favicon, title, and description. 
 
 ## Install
 
