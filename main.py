@@ -12,21 +12,21 @@ app = FastAPI(
     swagger_ui_parameters={"tryItOutEnabled": True}
 )
 
-# if settings.BACKEND_CORS_ORIGINS:
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],#[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+if settings.BACKEND_CORS_ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 @app.get("/", tags=['Documentation'])
 async def docs():
     return RedirectResponse(app.docs_url)
 
 @app.get("/url", tags=['UrlPreview'])
-async def url_preview(url: str , access = Depends(get_access)):
+async def url_preview(url: str, access = Depends(get_access)):
     if not access.status:
         print(access.error)
         raise HTTPException(
