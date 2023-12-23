@@ -11,9 +11,10 @@ import httpx
 BASE64_REGEX = r'^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))$'
 
 options = webdriver.ChromeOptions() 
-options.add_argument("--headless")
-options.page_load_strategy = "none"
-    
+options.add_argument("--disable-gpu")
+options.add_argument('headless')
+options.page_load_strategy = "normal"
+
 domain_evaluations = {
     'link[rel=canonical]': 'href',
     'meta[property="og:url"]': 'content',
@@ -206,7 +207,7 @@ async def selenium_requester(url):
 
 async def get_url_preview(url):
     data = await simple_requester(url)
-
+    
     if not data.get('image') or not data.get('title'):
         print("Requesting url through Selenium")
         data = await selenium_requester(url)
