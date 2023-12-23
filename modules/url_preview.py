@@ -1,11 +1,8 @@
 from typing import Optional
 from urllib.parse import urlparse, urljoin, urlunparse
-from pprint import pprint
-import asyncio
 
 from selenium import webdriver 
 from selenium.webdriver import Chrome 
-import time
 
 from bs4 import BeautifulSoup, Tag
 import re
@@ -97,7 +94,7 @@ async def evaluate_sources(
             if data: return data
             return None
         except Exception as error: 
-            pprint(error)
+            print(error)
             return None
         
 
@@ -200,20 +197,9 @@ async def simple_requester(url):
     content = await suop_html_parser(response.content, url)
     return content
 
-def interceptor(request):
-    # Block PNG, JPEG and GIF images
-    print(request.path())
-    if request.path.endswith(('.png', '.jpg', '.gif')):
-        request.abort()
-
 async def selenium_requester(url):
     driver = Chrome(options=options) 
     driver.get(url) 
-    # for request in driver.requests:
-    #     print(request)
-    #     if request.response:
-    #         pass
-    time.sleep(3)
     content = await suop_html_parser(driver.page_source, url)
     driver.quit()
     return content
