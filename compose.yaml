@@ -6,3 +6,13 @@ services:
       - 8000:8000
     env_file:
       - .env
+    security_opt:
+      - seccomp=seccomp_profile.json
+    stdin_open: true
+    tty: true
+    volumes:
+      - url_preview:/app/venv
+    
+volumes:
+  url_preview:
+    driver: local
