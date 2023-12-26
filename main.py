@@ -27,16 +27,10 @@ async def docs():
 
 @app.get("/url", tags=['UrlPreview'])
 async def url_preview(url: str, access = Depends(get_access)):
-    if not access.status:
-        print(access.error)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
     try: 
         data = await get_url_preview(url)
-        return {
-            "data": data
-        }
+        return { "data": data }
+    
     except Exception as e:
         print(e)
         raise HTTPException(
@@ -54,7 +48,7 @@ if settings.DEV_MODE:
     @app.get("/token", tags=['GetToken'])
     async def generate_jwt():
         return {
-            "token": create_access_token_dev(subject="http://localhost:3000/")
+            "token": create_access_token_dev(subject=settings.CLIENT_DOMAINS[0])
         }
 
 if __name__ == '__main__':
