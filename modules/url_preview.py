@@ -123,18 +123,22 @@ async def get_preview_image(
     try: 
         head = page.head
         image_source = await evaluate_sources(head, image_evaluations)
-        if image_source:
-            if not len(image_source) > 0: return
-            if can_parse_url(image_source): return image_source
+        if image_source and len(image_source) > 0:
+            if can_parse_url(image_source): 
+                return image_source
+            
             join_url = urljoin(url, image_source)
-            if await url_image_is_accessible(join_url): return join_url
-            print("Url IMG IS not accessible")
+            if await url_image_is_accessible(join_url): 
+                return join_url
+            
+        image_source = page.select_one('img')
+        if image_source: 
+            return image_source.get('src')
             
         image_source = await get_favicon(head, url)
-        if image_source: return image_source
+        if image_source: 
+            return image_source
         
-        image_source = page.select_one('img')
-        if image_source: return image_source.get('src')
         return None
     except: return None
 
@@ -145,14 +149,17 @@ async def get_favicon(
     try: 
         parsed_url = urlparse(url)
         favicon_url = urlunparse((parsed_url.scheme, parsed_url.netloc, "/favicon.ico", "", "", ""))
-        if await url_image_is_accessible(favicon_url): return favicon_url
+        if await url_image_is_accessible(favicon_url): 
+            return favicon_url
+        
         favicon_url = await evaluate_sources(head, favicon_evaluations)
-        if favicon_url:
-            if not len(favicon_url) > 0: return
-            if can_parse_url(favicon_url): return favicon_url
+        if favicon_url and len(favicon_url) > 0:
+            if can_parse_url(favicon_url): 
+                return favicon_url
+            
             join_url = urljoin(url, favicon_url)
-            if await url_image_is_accessible(join_url): return join_url
-            print("Url is Image not accessible")
+            if await url_image_is_accessible(join_url): 
+                return join_url
         return None
     except: return None
     
@@ -163,13 +170,16 @@ async def get_description(
         description_source = await evaluate_sources(page.head, description_evaluations)
         if not description_source:
             p_tag = page.select_one('body p')
-            if not p_tag: return None
+            if not p_tag: 
+                return None
             description_source = p_tag.contents[0]
-
-        if len(description_source) < 1: return None
-        print("No description source")
+            
+        if len(description_source) < 1: 
+            return None
+        
         return description_source
-    except: return None
+    except: 
+        return None
 
 async def get_title(head: Tag):
     if head.title: return head.title.text
